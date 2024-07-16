@@ -1,5 +1,6 @@
-import 'package:flutter/material.dart';
+import 'dart:io';
 
+import 'package:flutter/material.dart';
 import 'package:flutter_qr_reader/flutter_qr_reader.dart';
 import 'package:flutter_qr_reader_example/scanViewDemo.dart';
 import 'package:image_picker/image_picker.dart';
@@ -25,16 +26,16 @@ class _MyAppState extends State<MyApp> {
 }
 
 class HomePage extends StatefulWidget {
-  HomePage({Key key}) : super(key: key);
+  HomePage({Key? key}) : super(key: key);
 
   @override
   _HomePageState createState() => new _HomePageState();
 }
 
 class _HomePageState extends State<HomePage> {
-  QrReaderViewController _controller;
+  QrReaderViewController? _controller;
   bool isOk = false;
-  String data;
+  String? data;
   @override
   void initState() {
     super.initState();
@@ -49,12 +50,11 @@ class _HomePageState extends State<HomePage> {
       body: SingleChildScrollView(
         child: Column(
           children: <Widget>[
-            FlatButton(
+            TextButton(
               onPressed: () async {
-                Map<PermissionGroup, PermissionStatus> permissions =
-                    await PermissionHandler().requestPermissions([PermissionGroup.camera]);
-                print(permissions);
-                if (permissions[PermissionGroup.camera] == PermissionStatus.granted) {
+                var status = await Permission.camera.request();
+
+                if (status == PermissionStatus.granted) {
                   showDialog(
                     context: context,
                     builder: (context) {
@@ -68,38 +68,40 @@ class _HomePageState extends State<HomePage> {
                   });
                 }
               },
-              child: Text("请求权限"),
-              color: Colors.blue,
+              child: Text("Permission"),
+              // color: Colors.blue,
             ),
-            FlatButton(
+            TextButton(
               onPressed: () async {
-                Navigator.push(context, MaterialPageRoute(builder: (context) => ScanViewDemo()));
+                Navigator.push(context,
+                    MaterialPageRoute(builder: (context) => ScanViewDemo()));
               },
-              child: Text("独立UI"),
+              child: Text("Scan"),
             ),
-            FlatButton(
+            TextButton(
                 onPressed: () async {
-                  var image = await ImagePicker.pickImage(source: ImageSource.gallery);
+                  var image = await ImagePicker()
+                      .pickImage(source: ImageSource.gallery);
                   if (image == null) return;
-                  final rest = await FlutterQrReader.imgScan(image);
+                  final rest = await FlutterQrReader.imgScan(File(image.path));
                   setState(() {
                     data = rest;
                   });
                 },
                 child: Text("识别图片")),
-            FlatButton(
+            TextButton(
                 onPressed: () {
                   assert(_controller != null);
-                  _controller.setFlashlight();
+                  _controller!.setFlashlight();
                 },
                 child: Text("切换闪光灯")),
-            FlatButton(
+            TextButton(
                 onPressed: () {
                   assert(_controller != null);
-                  _controller.startCamera(onScan);
+                  _controller!.startCamera(onScan);
                 },
                 child: Text("开始扫码（暂停后）")),
-            if (data != null) Text(data),
+            if (data != null) Text(data!),
             if (isOk)
               Container(
                 width: 320,
@@ -109,7 +111,7 @@ class _HomePageState extends State<HomePage> {
                   height: 350,
                   callback: (container) {
                     this._controller = container;
-                    _controller.startCamera(onScan);
+                    _controller!.startCamera(onScan);
                   },
                 ),
               )
@@ -124,7 +126,7 @@ class _HomePageState extends State<HomePage> {
     setState(() {
       data = v;
     });
-    _controller.stopCamera();
+    _controller!.stopCamera();
   }
 
   @override
